@@ -1,0 +1,34 @@
+// unchecky_bho.idl : IDL source for unchecky_bho
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (unchecky_bho.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(2582D9B0-5E53-492D-A894-9F0FCB088C4C),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IUncheckyBHO : IDispatch{
+};
+[
+	uuid(262898BB-B418-44D8-B778-E0184460685E),
+	version(1.0),
+]
+library unchecky_bhoLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(89CB800E-E9FA-450F-B4A4-7009B7881EFD)		
+	]
+	coclass UncheckyBHO
+	{
+		[default] interface IUncheckyBHO;
+	};
+};
+

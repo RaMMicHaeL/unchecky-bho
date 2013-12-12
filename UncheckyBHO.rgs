@@ -1,0 +1,33 @@
+HKCR
+{
+    Unchecky.BHO.1 = s 'Unchecky'
+    {
+        CLSID = s '{89CB800E-E9FA-450F-B4A4-7009B7881EFD}'
+    }
+    Unchecky.BHO = s 'Unchecky'
+    {
+        CLSID = s '{89CB800E-E9FA-450F-B4A4-7009B7881EFD}'
+        CurVer = s 'Unchecky.BHO.1'
+    }
+	NoRemove CLSID
+	{
+		ForceRemove {89CB800E-E9FA-450F-B4A4-7009B7881EFD} = s 'Unchecky'
+		{
+            ProgID = s 'Unchecky.BHO.1'
+            VersionIndependentProgID = s 'Unchecky.BHO'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{262898BB-B418-44D8-B778-E0184460685E}'
+			Version = s '1.0'
+            'Implemented Categories' = s ''
+            {
+                {59fb2056-d625-48d0-a944-1a85b5ab2640} = s ''   
+                    {
+                    }
+            }
+		}
+	}
+}
