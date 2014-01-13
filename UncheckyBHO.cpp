@@ -37,6 +37,9 @@ STDMETHODIMP CUncheckyBHO::SetSite(IUnknown* pUnkSite)
 
 		// Release cached pointers and other resources here.
 		m_spWebBrowser.Release();
+
+		// Unregister checkbox.
+		CheckboxUnadvise();
 	}
 
 	// Return the base class implementation
@@ -45,16 +48,6 @@ STDMETHODIMP CUncheckyBHO::SetSite(IUnknown* pUnkSite)
 
 void STDMETHODCALLTYPE CUncheckyBHO::OnDocumentComplete(IDispatch *pDisp, VARIANT *pvarURL)
 {
-/*
-	// Retrieve the top-level window from the site.
-	HWND hwnd;
-	HRESULT hr = m_spWebBrowser->get_HWND((LONG_PTR*)&hwnd);
-	if(SUCCEEDED(hr))
-	{
-		// Output a message box when page is loaded.
-		MessageBox(hwnd, L"Hello World!", L"BHO", MB_OK);
-	}*/
-
 	HRESULT hr = S_OK;
 
 	// Query for the IWebBrowser2 interface.
@@ -65,6 +58,9 @@ void STDMETHODCALLTYPE CUncheckyBHO::OnDocumentComplete(IDispatch *pDisp, VARIAN
 		m_spWebBrowser.IsEqualObject(spTempWebBrowser))
 	{
 		EndTimer();
+
+		// Unregister checkbox.
+		CheckboxUnadvise();
 
 		CComBSTR bsUrl;
 		hr = m_spWebBrowser->get_LocationURL(&bsUrl);
@@ -91,10 +87,24 @@ void STDMETHODCALLTYPE CUncheckyBHO::OnDocumentComplete(IDispatch *pDisp, VARIAN
 	}
 }
 
-void STDMETHODCALLTYPE CUncheckyBHO::OnMouseClick(IHTMLEventObj *eventObj)
+void STDMETHODCALLTYPE CUncheckyBHO::OnMouseClick(IHTMLEventObj *pEvtObj)
 {
-	// I'd like to show a message box here, but
-	// things go wrong when I use this event
+	EndTimer();
+
+	HWND hwnd;
+	HRESULT hr = m_spWebBrowser->get_HWND((LONG_PTR*)&hwnd);
+	if(SUCCEEDED(hr))
+	{
+		int nRet = MessageBox(hwnd, L"Are you sure?!", L"Unchecky", MB_YESNO);
+		if(nRet == IDYES)
+		{
+			CheckboxUnadvise();
+		}
+		else
+		{
+			StartTimer(200);
+		}
+	}
 }
 
 LRESULT CUncheckyBHO::OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -128,14 +138,52 @@ LRESULT CUncheckyBHO::OnTimer(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHa
 
 void CUncheckyBHO::StartTimer(UINT nElapse)
 {
-	if(m_wndMsg)
+	if(m_wndMsg && !m_bTimerRunning)
+	{
 		m_wndMsg.SetTimer(1, nElapse);
+		m_bTimerRunning = TRUE;
+	}
 }
 
 void CUncheckyBHO::EndTimer()
 {
-	if(m_wndMsg)
+	if(m_wndMsg && m_bTimerRunning)
+	{
 		m_wndMsg.KillTimer(1);
+		m_bTimerRunning = FALSE;
+	}
+}
+
+void CUncheckyBHO::CheckboxAdvise(IHTMLElement *elementCheckbox)
+{
+	if(!m_fCheckboxAdvised)
+	{
+		HRESULT hr = IHTMLInputTextElementEvents2Impl::DispEventAdvise(elementCheckbox);
+		if(SUCCEEDED(hr))
+		{
+			ATLASSERT(!m_spAdvisedCheckbox);
+			m_spAdvisedCheckbox = elementCheckbox;
+			m_fCheckboxAdvised = TRUE;
+		}
+		else
+			ATLASSERT(0);
+	}
+}
+
+void CUncheckyBHO::CheckboxUnadvise()
+{
+	if(m_fCheckboxAdvised)
+	{
+		ATLASSERT(m_spAdvisedCheckbox);
+		HRESULT hr = IHTMLInputTextElementEvents2Impl::DispEventUnadvise(m_spAdvisedCheckbox);
+		if(SUCCEEDED(hr))
+		{
+			m_spAdvisedCheckbox.Release();
+			m_fCheckboxAdvised = FALSE;
+		}
+		else
+			ATLASSERT(0);
+	}
 }
 
 bool CUncheckyBHO::IsAdobePage(BSTR bsUrl, IHTMLDocument2 *pDocument)
@@ -194,14 +242,9 @@ void CUncheckyBHO::HandleAdobePage(BSTR bsUrl, IHTMLDocument2 *pDocument)
 		return;
 	}
 
+	CheckboxUnadvise();
+
 	elementCheckbox->click();
 
-	CComPtr<IHTMLElement> elementParent;
-	hr = elementCheckbox->get_parentElement(&elementParent);
-	if(SUCCEEDED(hr) && elementParent)
-	{
-		// Register to sink events from HTMLDocumentEvents2.
-		//hr = IHTMLElementEvents2Impl::DispEventAdvise(elementParent);
-		//ATLASSERT(SUCCEEDED(hr));
-	}
+	CheckboxAdvise(elementCheckbox);
 }

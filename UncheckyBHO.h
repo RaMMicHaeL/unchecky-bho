@@ -27,11 +27,11 @@ class ATL_NO_VTABLE CUncheckyBHO :
 	public IObjectWithSiteImpl<CUncheckyBHO>,
 	public IDispatchImpl<IUncheckyBHO, &IID_IUncheckyBHO, &LIBID_unchecky_bhoLib, /*wMajor =*/ 1, /*wMinor =*/ 0>,
 	public IDispEventImpl<1, CUncheckyBHO, &DIID_DWebBrowserEvents2, &LIBID_SHDocVw, 1, 1>,
-	public IDispEventImpl<2, CUncheckyBHO, &DIID_HTMLElementEvents2, &LIBID_MSHTML, 4, 0>,
+	public IDispEventImpl<2, CUncheckyBHO, &DIID_HTMLInputTextElementEvents2, &LIBID_MSHTML, 4, 0>,
 	public CMessageMap
 {
 	typedef IDispEventImpl<1, CUncheckyBHO, &DIID_DWebBrowserEvents2, &LIBID_SHDocVw, 1, 1> IDWebBrowserEvents2Impl;
-	typedef IDispEventImpl<2, CUncheckyBHO, &DIID_HTMLElementEvents2, &LIBID_MSHTML, 4, 0> IHTMLElementEvents2Impl;
+	typedef IDispEventImpl<2, CUncheckyBHO, &DIID_HTMLInputTextElementEvents2, &LIBID_MSHTML, 4, 0> IHTMLInputTextElementEvents2Impl;
 
 public:
 	CUncheckyBHO() : m_wndMsg(L"Static", this)
@@ -63,7 +63,7 @@ END_COM_MAP()
 
 	BEGIN_SINK_MAP(CUncheckyBHO)
 		SINK_ENTRY_EX(1, DIID_DWebBrowserEvents2, DISPID_DOCUMENTCOMPLETE, OnDocumentComplete)
-		SINK_ENTRY_EX(2, DIID_HTMLElementEvents2, DISPID_HTMLELEMENTEVENTS2_ONCLICK, OnMouseClick)
+		SINK_ENTRY_EX(2, DIID_HTMLInputTextElementEvents2, DISPID_HTMLELEMENTEVENTS2_ONCLICK, OnMouseClick)
 	END_SINK_MAP()
 
 public:
@@ -72,8 +72,8 @@ public:
 	// DWebBrowserEvents2
 	void STDMETHODCALLTYPE OnDocumentComplete(IDispatch *pDisp, VARIANT *pvarURL);
 
-	// HTMLDocumentEvents2
-	void STDMETHODCALLTYPE OnMouseClick(IHTMLEventObj *eventObj);
+	// HTMLInputTextElementEvents2
+	void STDMETHODCALLTYPE OnMouseClick(IHTMLEventObj *pEvtObj);
 
 	BEGIN_MSG_MAP(CUncheckyBHO)
 		MESSAGE_HANDLER(WM_TIMER, OnTimer)
@@ -83,11 +83,15 @@ public:
 
 private:
 	CComPtr<IWebBrowser2> m_spWebBrowser;
-	BOOL m_fAdvised;
+	CComPtr<IHTMLElement> m_spAdvisedCheckbox;
+	BOOL m_fAdvised = FALSE, m_fCheckboxAdvised = FALSE;
 	CContainedWindow m_wndMsg;
+	BOOL m_bTimerRunning = FALSE;
 
 	void StartTimer(UINT nElapse);
 	void EndTimer();
+	void CheckboxAdvise(IHTMLElement *elementCheckbox);
+	void CheckboxUnadvise();
 
 	bool IsAdobePage(BSTR bsUrl, IHTMLDocument2 *pDocument);
 	void HandleAdobePage(BSTR bsUrl, IHTMLDocument2 *pDocument);
